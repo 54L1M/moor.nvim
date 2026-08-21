@@ -175,6 +175,13 @@ describe("dashboard", function()
       assert.are.equal("   ○ still open", dash_lines()[2], "toggle again reopens it")
     end)
 
+    it("renders the cancelled state with its own icon", function()
+      local name = vim.fs.basename(proj)
+      vim.fn.writefile({ "- [-] nah, skipping this" }, root .. "/todo/" .. name .. ".md", "a")
+      dashboard.open({ scope = "project" })
+      assert.are.equal("   ✗ nah, skipping this", dash_lines()[4], "cancelled tasks get the cancelled icon")
+    end)
+
     it("re-scopes an already-open dashboard", function()
       dashboard.open()
       dashboard.open({ scope = "project" })

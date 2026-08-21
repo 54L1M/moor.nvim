@@ -98,7 +98,10 @@ local function render(buf)
   ---@param suffix? string  Dimmed source-note label for the flat sorted view
   local function add_row(item, suffix)
     local open = tasks.is_open(item.task)
-    local icon = open and icons.open or (item.task.state == "x" and icons.done or ("[" .. item.task.state .. "]"))
+    local icon = open and icons.open
+      or (item.task.state == "x" and icons.done)
+      or (item.task.state == "-" and icons.cancelled)
+      or ("[" .. item.task.state .. "]")
     local prefix = "   " .. icon .. " "
     local text, link_ranges = display_text(item.task.text)
     local row = prefix .. text

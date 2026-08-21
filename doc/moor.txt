@@ -61,7 +61,7 @@ Calling setup() is optional; these are the defaults: >lua
     },
     dashboard = {
       window = { width = 0.7, height = 0.7, border = "rounded", title = " open todos " },
-      icons = { open = "○", done = "✓" },  -- false = raw "- [ ]" brackets
+      icons = { open = "○", done = "✓", cancelled = "✗" },  -- false = raw brackets
       maps = { toggle = "t", jump = "<CR>", jump_context = "gd", sort = "s", refresh = "r", close = "q" },
     },
     links = { new_note_dir = "" },

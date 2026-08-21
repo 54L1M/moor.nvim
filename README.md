@@ -59,8 +59,9 @@ require("moor").setup({
 
   dashboard = {
     window = { width = 0.7, height = 0.7, border = "rounded", title = " open todos " },
-    icons = { open = "○", done = "✓" }, -- view-only; files keep "- [ ]" markdown.
-                                        -- icons = false shows raw brackets.
+    -- View-only; files keep "- [ ]" markdown. icons = false shows raw brackets.
+    -- cancelled styles the "-" state (add it to todo.toggle_states to use it).
+    icons = { open = "○", done = "✓", cancelled = "✗" },
     maps = { toggle = "t", jump = "<CR>", jump_context = "gd", sort = "s", refresh = "r", close = "q" },
   },
 

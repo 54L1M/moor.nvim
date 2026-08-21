@@ -44,7 +44,8 @@ M.defaults = {
     window = { width = 0.7, height = 0.7, border = "rounded", title = " open todos " },
     -- How checkboxes render in the dashboard views; the files on disk always
     -- keep plain "- [ ]" markdown. Set icons = false for raw brackets.
-    icons = { open = "○", done = "✓" },
+    -- `cancelled` styles the "-" state (add it to todo.toggle_states to use it).
+    icons = { open = "○", done = "✓", cancelled = "✗" },
     maps = { toggle = "t", jump = "<CR>", jump_context = "gd", sort = "s", refresh = "r", close = "q" },
   },
 
