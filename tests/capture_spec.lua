@@ -1,0 +1,116 @@
+-- tests/capture_spec.lua
+-- The capture float: acwrite plumbing, save routing, promote, abandon.
+
+local capture = require("moor.capture")
+
+describe("capture", function()
+  local root, proj
+
+  before_each(function()
+    root = vim.fn.tempname()
+    proj = vim.fn.tempname()
+    vim.fn.mkdir(root, "p")
+    vim.fn.mkdir(proj .. "/.git", "p")
+    require("moor").setup({ notes_dir = root, capture = { timestamp = false } })
+    vim.cmd.cd(proj)
+  end)
+
+  after_each(function()
+    vim.fn.delete(root, "rf")
+    vim.fn.delete(proj, "rf")
+    vim.cmd("silent! %bwipeout!")
+  end)
+
+  it("opens a floating acwrite markdown buffer", function()
+    local buf, win = capture.open()
+    vim.cmd.stopinsert()
+    assert.are.equal("acwrite", vim.bo[buf].buftype, "capture buffer must be acwrite")
+    assert.are.equal("markdown", vim.bo[buf].filetype, "capture buffer edits as markdown")
+    assert.are.equal("editor", vim.api.nvim_win_get_config(win).relative, "window must be a float")
+  end)
+
+  it("routes a note capture into the configured note file and wipes itself", function()
+    local buf = capture.open({ mode = "note" })
+    vim.cmd.stopinsert()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "a passing thought" })
+    vim.cmd.write()
+    vim.wait(100, function()
+      return not vim.api.nvim_buf_is_valid(buf)
+    end)
+    assert.is_false(vim.api.nvim_buf_is_valid(buf), ":w must wipe the capture buffer")
+    local lines = vim.fn.readfile(root .. "/Captures.md")
+    assert.are.same({ "# Captures", "", "a passing thought", "" }, lines, "note appended with title header")
+  end)
+
+  it("routes a todo capture through tasks.format with the stashed context", function()
+    vim.fn.writefile({ "line one", "line two" }, proj .. "/main.go")
+    vim.cmd.edit(proj .. "/main.go")
+    vim.api.nvim_win_set_cursor(0, { 2, 0 })
+    local buf = capture.open({ mode = "todo", context = true })
+    vim.cmd.stopinsert()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "handle EOF" })
+    vim.cmd.write()
+    local todo_file = require("moor.todo").file()
+    local lines = vim.fn.readfile(todo_file)
+    assert.are.equal("- [ ] handle EOF · `main.go:2`", lines[#lines], "todo line moored to the pre-float cursor")
+  end)
+
+  it("passes through lines that are already tasks", function()
+    local buf = capture.open({ mode = "todo" })
+    vim.cmd.stopinsert()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "- [x] already formed" })
+    vim.cmd.write()
+    local lines = vim.fn.readfile(require("moor.todo").file())
+    assert.are.equal("- [x] already formed", lines[#lines], "existing task lines are not re-wrapped")
+  end)
+
+  it("moors hand-typed task lines that lack a context", function()
+    vim.fn.writefile({ "l1", "l2" }, proj .. "/a.go")
+    vim.cmd.edit(proj .. "/a.go")
+    vim.api.nvim_win_set_cursor(0, { 2, 0 })
+    local buf = capture.open({ mode = "todo", context = true })
+    vim.cmd.stopinsert()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+      "- [ ] typed with checkbox",
+      "- [ ] already moored · `other.go:9`",
+    })
+    vim.cmd.write()
+    local lines = vim.fn.readfile(require("moor.todo").file())
+    assert.are.equal(
+      "- [ ] typed with checkbox · `a.go:2`",
+      lines[#lines - 1],
+      "hand-typed task gets the stashed context"
+    )
+    assert.are.equal("- [ ] already moored · `other.go:9`", lines[#lines], "an existing mooring is never overwritten")
+  end)
+
+  it("does not write anything for an empty capture", function()
+    local buf = capture.open({ mode = "note" })
+    vim.cmd.stopinsert()
+    vim.cmd.write()
+    assert.is_true(vim.api.nvim_buf_is_valid(buf), "empty capture must not be wiped")
+    assert.are.equal(0, vim.fn.filereadable(root .. "/Captures.md"), "no file written for an empty capture")
+  end)
+
+  it("promotes the same buffer to a split with save routing intact", function()
+    local buf, win = capture.open({ mode = "note" })
+    vim.cmd.stopinsert()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "longer thought" })
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-p>", true, false, true), "x", false)
+    assert.is_false(vim.api.nvim_win_is_valid(win), "float must close on promote")
+    assert.are.equal(buf, vim.api.nvim_get_current_buf(), "the same buffer moves to the split")
+    assert.are.equal("", vim.api.nvim_win_get_config(0).relative, "promoted window is a real split")
+    vim.cmd.write()
+    local lines = vim.fn.readfile(root .. "/Captures.md")
+    assert.are.equal("longer thought", lines[3], ":w in the split still routes to the vault")
+  end)
+
+  it("abandons without writing", function()
+    local buf = capture.open({ mode = "note" })
+    vim.cmd.stopinsert()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "never mind" })
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-c>", true, false, true), "x", false)
+    assert.is_false(vim.api.nvim_buf_is_valid(buf), "abort must wipe the buffer")
+    assert.are.equal(0, vim.fn.filereadable(root .. "/Captures.md"), "abort must not write")
+  end)
+end)
