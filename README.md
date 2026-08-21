@@ -61,7 +61,7 @@ require("moor").setup({
     window = { width = 0.7, height = 0.7, border = "rounded", title = " open todos " },
     icons = { open = "○", done = "✓" }, -- view-only; files keep "- [ ]" markdown.
                                         -- icons = false shows raw brackets.
-    maps = { toggle = "t", jump = "<CR>", jump_context = "gd", refresh = "r", close = "q" },
+    maps = { toggle = "t", jump = "<CR>", jump_context = "gd", sort = "s", refresh = "r", close = "q" },
   },
 
   links = {
@@ -129,6 +129,16 @@ plain` skips the file:line.
   when you want to edit freely.
 - `:Moor toggle` flips the checkbox on the current line — in any buffer,
   including inside the dashboard.
+- **Due dates** are inline `due:YYYY-MM-DD` tokens — the syntax ZenNotes
+  already parses, so they work on your phone too. When capturing you can type
+  relative shortcuts and moor expands them to the absolute date on save:
+
+  ```
+  due:today  due:tomorrow  due:fri  due:monday  due:3d  due:2w
+  ```
+
+  The dashboard highlights the token; overdue and due-today dates get a
+  warning accent.
 - `:Moor dashboard` opens a float aggregating every open `- [ ]` across the
   vault, grouped by note:
 
@@ -141,9 +151,11 @@ plain` skips the file:line.
   ```
 
   `<CR>` jumps to the note, `gd` jumps to the moored code location, `t`
-  toggles (the item disappears — that's the feedback), `r` rescans, `q` closes.
-  The active keys are pinned in the float's bottom border, and your global
-  toggle binding works here too.
+  toggles (the item disappears — that's the feedback), `s` switches to a flat
+  soonest-first deadline list (undated items last, source note dimmed at the
+  end of each row) and back, `r` rescans, `q` closes. The active keys are
+  pinned in the float's bottom border, and your global toggle binding works
+  here too.
 
   The rendering is view-only sugar — wikilinks show without their
   `[[brackets]]`, checkboxes use the configured `dashboard.icons` — while the
@@ -157,6 +169,8 @@ plain` skips the file:line.
 | `MoorDone`     | done task text             | strikethrough, `Comment` fg |
 | `MoorDoneMark` | done checkbox icon         | `Comment`                   |
 | `MoorTodoMark` | open checkbox icon         | unstyled                    |
+| `MoorDue`      | future due dates           | `Special`                   |
+| `MoorOverdue`  | overdue / due-today dates  | `DiagnosticError`           |
 
 Change any of them in your config or colorscheme:
 

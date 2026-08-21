@@ -21,10 +21,12 @@ local function save(buf)
 
   if mode == "todo" then
     local tasks = require("moor.tasks")
+    local due = require("moor.due")
     local context = vim.b[buf].moor_context
     local out = {}
     for _, line in ipairs(lines) do
       if vim.trim(line) ~= "" then
+        line = due.expand(line)
         local task = tasks.parse(line)
         if not task then
           -- Prose becomes an open task.

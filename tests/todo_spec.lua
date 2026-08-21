@@ -37,6 +37,17 @@ describe("todo", function()
     assert.is_nil(require("moor.vault").read_lines(todo.file()), "no file created for a blank todo")
   end)
 
+  it("expands relative due shortcuts when adding", function()
+    todo.add("pay the harbor fee due:tomorrow")
+    local lines = require("moor.vault").read_lines(todo.file())
+    local expected = os.date("%Y-%m-%d", os.time() + 86400)
+    assert.are.equal(
+      "- [ ] pay the harbor fee due:" .. expected,
+      lines[#lines],
+      "due:tomorrow becomes an absolute date"
+    )
+  end)
+
   it("moors a context onto the task", function()
     todo.add("check this", { path = "src/x.go", lnum = 12 })
     local lines = require("moor.vault").read_lines(todo.file())

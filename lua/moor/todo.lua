@@ -19,7 +19,8 @@ function M.file()
   return vim.fs.joinpath(vault.root(), opts().todo.dir, name .. ".md")
 end
 
---- Append one open task to the project todo file.
+--- Append one open task to the project todo file. Relative due shortcuts
+--- (due:tomorrow, due:fri, due:3d) are expanded to absolute dates on the way in.
 ---@param text string
 ---@param context? {path: string, lnum: number}
 ---@return boolean ok
@@ -27,6 +28,7 @@ function M.add(text, context)
   if vim.trim(text) == "" then
     return false
   end
+  text = require("moor.due").expand(text)
   local vault = require("moor.vault")
   local path = M.file()
   local ok = vault.append_lines(path, { require("moor.tasks").format(text, context) })

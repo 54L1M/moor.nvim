@@ -62,7 +62,7 @@ Calling setup() is optional; these are the defaults: >lua
     dashboard = {
       window = { width = 0.7, height = 0.7, border = "rounded", title = " open todos " },
       icons = { open = "○", done = "✓" },  -- false = raw "- [ ]" brackets
-      maps = { toggle = "t", jump = "<CR>", jump_context = "gd", refresh = "r", close = "q" },
+      maps = { toggle = "t", jump = "<CR>", jump_context = "gd", sort = "s", refresh = "r", close = "q" },
     },
     links = { new_note_dir = "" },
     keymaps = {                            -- global maps, applied by setup()
@@ -157,6 +157,14 @@ is the basename of the git root (or of the cwd outside a repo).
 A todo captured with context carries a trailing code span: >
   - [ ] handle EOF case · `internal/server/conn.go:142`
 <
+                                                                     *moor-due*
+Due dates are inline "due:YYYY-MM-DD" tokens (the ZenNotes syntax, parsed on
+the phone too). Relative shortcuts typed while capturing are expanded to the
+absolute date on save: due:today, due:tomorrow, weekday names (due:fri,
+due:monday — the same day counts as today), and offsets (due:3d, due:2w).
+Absolute dates and unrecognized words pass through untouched. The dashboard
+highlights the token with MoorDue; overdue and due-today dates use
+MoorOverdue.
 The path is project-root-relative. On other devices it is plain readable
 monospace; in nvim the dashboard's `gd` jumps to it.
 
@@ -169,6 +177,8 @@ source note. Buffer-local maps (configurable):
   <CR>    jump to the task's line in its source note
   gd      jump to the moored code location, if the task has one
   t       toggle the task in its source file; the item disappears
+  s       toggle a flat soonest-first sort by due date (undated items last;
+          the source note is shown dimmed; the title gains "by due")
   r       rescan
   q       close
 

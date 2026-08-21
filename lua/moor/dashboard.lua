@@ -22,6 +22,8 @@ local function define_hl()
   -- group yourself (colorscheme or config) to give them a color.
   vim.api.nvim_set_hl(0, "MoorTodoMark", { default = true })
   vim.api.nvim_set_hl(0, "MoorLink", { default = true, link = "Underlined" })
+  vim.api.nvim_set_hl(0, "MoorDue", { default = true, link = "Special" })
+  vim.api.nvim_set_hl(0, "MoorOverdue", { default = true, link = "DiagnosticError" })
 end
 define_hl()
 vim.api.nvim_create_autocmd("ColorScheme", {
@@ -35,6 +37,8 @@ local state_buf = nil
 local entries = {}
 ---@type "all"|"project"
 local scope = "all"
+---@type boolean toggled by the sort key: flat list, soonest due date first
+local sort_by_due = false
 
 local function opts()
   return require("moor").options
@@ -82,47 +86,87 @@ local function render(buf)
   entries = {}
   local lines = {}
   local marks = {} -- { lnum(0-based), col, end_col, hl_group }
-  local last_path = nil
 
-  for _, item in ipairs(items) do
-    if item.path ~= last_path then
-      if last_path then
-        lines[#lines + 1] = ""
-      end
-      local open_count = 0
-      for _, it in ipairs(items) do
-        open_count = open_count + ((it.path == item.path and tasks.is_open(it.task)) and 1 or 0)
-      end
-      local header = (" %s (%d)"):format(vault.relative(item.path), open_count)
-      lines[#lines + 1] = header
-      marks[#marks + 1] = { #lines - 1, 0, #header, "Title" }
-      last_path = item.path
-    end
+  -- icons = false shows the raw markdown brackets; states beyond open/done
+  -- (e.g. "-") always fall back to them.
+  local icons = opts().dashboard.icons
+  if type(icons) ~= "table" then
+    icons = { open = "[ ]", done = "[x]" }
+  end
+
+  ---@param item MoorTodoItem
+  ---@param suffix? string  Dimmed source-note label for the flat sorted view
+  local function add_row(item, suffix)
     local open = tasks.is_open(item.task)
-    -- icons = false shows the raw markdown brackets; states beyond open/done
-    -- (e.g. "-") always fall back to them.
-    local icons = opts().dashboard.icons
-    if type(icons) ~= "table" then
-      icons = { open = "[ ]", done = "[x]" }
-    end
     local icon = open and icons.open or (item.task.state == "x" and icons.done or ("[" .. item.task.state .. "]"))
     local prefix = "   " .. icon .. " "
     local text, link_ranges = display_text(item.task.text)
     local row = prefix .. text
+    local text_to = #row -- done-strike and code-ref marks must not cover the suffix
+    if suffix then
+      row = row .. " · " .. suffix
+    end
     lines[#lines + 1] = row
     entries[#lines] = item
-    marks[#marks + 1] = { #lines - 1, 3, #prefix - 1, open and "MoorTodoMark" or "MoorDoneMark" }
+    local l = #lines - 1
+    marks[#marks + 1] = { l, 3, #prefix - 1, open and "MoorTodoMark" or "MoorDoneMark" }
     if not open then
       -- Done rows stay uniformly struck and dimmed; no link accents on top.
-      marks[#marks + 1] = { #lines - 1, #prefix, #row, "MoorDone" }
+      marks[#marks + 1] = { l, #prefix, text_to, "MoorDone" }
     else
       for _, range in ipairs(link_ranges) do
-        marks[#marks + 1] = { #lines - 1, #prefix + range[1], #prefix + range[2], "MoorLink" }
+        marks[#marks + 1] = { l, #prefix + range[1], #prefix + range[2], "MoorLink" }
+      end
+      local due = require("moor.due").find(text)
+      if due then
+        -- Overdue and due-today both get the accent; future dates the calm color.
+        local group = due.status == "future" and "MoorDue" or "MoorOverdue"
+        marks[#marks + 1] = { l, #prefix + due.from - 1, #prefix + due.to, group }
       end
       local ref_start = text:find("`[^`]-:%d+`%s*$")
       if ref_start then
-        marks[#marks + 1] = { #lines - 1, #prefix + ref_start - 1, #row, "Comment" }
+        marks[#marks + 1] = { l, #prefix + ref_start - 1, text_to, "Comment" }
       end
+    end
+    if suffix then
+      marks[#marks + 1] = { l, text_to, #row, "Comment" }
+    end
+  end
+
+  if sort_by_due then
+    -- Flat deadline list: soonest first, undated items last in file order.
+    local due_mod = require("moor.due")
+    local order = {}
+    for i, item in ipairs(items) do
+      local d = due_mod.find(item.task.text)
+      order[#order + 1] = { item = item, date = d and d.date or "9999-99-99", i = i }
+    end
+    table.sort(order, function(a, b)
+      if a.date ~= b.date then
+        return a.date < b.date
+      end
+      return a.i < b.i
+    end)
+    for _, o in ipairs(order) do
+      add_row(o.item, scope == "all" and vault.relative(o.item.path) or nil)
+    end
+  else
+    local last_path = nil
+    for _, item in ipairs(items) do
+      if item.path ~= last_path then
+        if last_path then
+          lines[#lines + 1] = ""
+        end
+        local open_count = 0
+        for _, it in ipairs(items) do
+          open_count = open_count + ((it.path == item.path and tasks.is_open(it.task)) and 1 or 0)
+        end
+        local header = (" %s (%d)"):format(vault.relative(item.path), open_count)
+        lines[#lines + 1] = header
+        marks[#marks + 1] = { #lines - 1, 0, #header, "Title" }
+        last_path = item.path
+      end
+      add_row(item)
     end
   end
   if #lines == 0 then
@@ -190,10 +234,12 @@ end
 
 ---@return string
 local function title()
-  if scope == "project" then
-    return " todo: " .. require("moor.project").identity() .. " "
+  local base = scope == "project" and (" todo: " .. require("moor.project").identity() .. " ")
+    or opts().dashboard.window.title
+  if sort_by_due then
+    base = base:gsub("%s+$", "") .. " · by due "
   end
-  return opts().dashboard.window.title
+  return base
 end
 
 --- Key-hint footer for the float border, built from the configured maps so it
@@ -206,6 +252,7 @@ local function footer()
     { maps.toggle, "toggle" },
     { maps.jump, "note" },
     { maps.jump_context, "code" },
+    { maps.sort, "sort" },
     { maps.refresh, "refresh" },
     { maps.close, "close" },
   }) do
@@ -242,6 +289,11 @@ function M.open(open_opts)
     bmap(maps.jump, jump_to_note, "jump to note")
     bmap(maps.jump_context, jump_to_context, "jump to code context")
     bmap(maps.toggle, M.toggle_current, "toggle todo")
+    bmap(maps.sort, function()
+      sort_by_due = not sort_by_due
+      vim.api.nvim_win_set_config(0, { title = title(), title_pos = "center" })
+      refresh()
+    end, "toggle due-date sort")
     bmap(maps.refresh, refresh, "refresh")
     bmap(maps.close, function()
       vim.api.nvim_win_close(0, true)
@@ -254,6 +306,7 @@ function M.open(open_opts)
       callback = function()
         state_buf = nil
         entries = {}
+        sort_by_due = false
       end,
     })
   end

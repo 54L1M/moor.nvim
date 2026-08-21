@@ -45,7 +45,7 @@ M.defaults = {
     -- How checkboxes render in the dashboard views; the files on disk always
     -- keep plain "- [ ]" markdown. Set icons = false for raw brackets.
     icons = { open = "○", done = "✓" },
-    maps = { toggle = "t", jump = "<CR>", jump_context = "gd", refresh = "r", close = "q" },
+    maps = { toggle = "t", jump = "<CR>", jump_context = "gd", sort = "s", refresh = "r", close = "q" },
   },
 
   links = {

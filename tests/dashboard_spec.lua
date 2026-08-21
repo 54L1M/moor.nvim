@@ -89,6 +89,34 @@ describe("dashboard", function()
     assert.is_true(link_marked, "link labels must carry the MoorLink highlight")
   end)
 
+  it("highlights due tokens, with an accent for overdue", function()
+    vim.fn.writefile({ "# D", "- [ ] future thing due:2999-01-01", "- [ ] late thing due:2020-01-01" }, root .. "/D.md")
+    dashboard.open()
+    local found = {}
+    for _, m in
+      ipairs(
+        vim.api.nvim_buf_get_extmarks(0, vim.api.nvim_get_namespaces()["moor.dashboard"], 0, -1, { details = true })
+      )
+    do
+      found[m[4].hl_group] = true
+    end
+    assert.is_true(found["MoorDue"] == true, "future due tokens carry MoorDue")
+    assert.is_true(found["MoorOverdue"] == true, "overdue tokens carry MoorOverdue")
+  end)
+
+  it("s toggles a flat soonest-first sort and back", function()
+    vim.fn.writefile({ "# S", "- [ ] later due:2999-06-01", "- [ ] sooner due:2999-01-01" }, root .. "/S.md")
+    dashboard.open()
+    vim.api.nvim_feedkeys("s", "x", false)
+    local lines = dash_lines()
+    assert.are.equal("   ○ sooner due:2999-01-01 · S.md", lines[1], "soonest dated item first, note as dim suffix")
+    assert.are.equal("   ○ later due:2999-06-01 · S.md", lines[2], "then the next date")
+    assert.is_truthy(lines[3]:find("· A%.md$"), "undated items follow in file order")
+    assert.is_truthy(vim.api.nvim_win_get_config(0).title[1][1]:find("by due"), "window title shows the sort mode")
+    vim.api.nvim_feedkeys("s", "x", false)
+    assert.are.equal(" A.md (2)", dash_lines()[1], "pressing s again restores the grouped view")
+  end)
+
   it("falls back to raw brackets with icons = false", function()
     require("moor").setup({ notes_dir = root, dashboard = { icons = false } })
     dashboard.open()
