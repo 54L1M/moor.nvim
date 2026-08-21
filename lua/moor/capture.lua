@@ -49,8 +49,11 @@ local function save(buf)
     if #lines == 0 then
       return false
     end
-    if opts().capture.timestamp then
-      table.insert(lines, 1, os.date("## %H:%M"))
+    local stamp = opts().capture.timestamp
+    if stamp then
+      -- A string is an os.date() format; `true` means the default one.
+      local fmt = type(stamp) == "string" and stamp or "## %Y-%m-%d %H:%M"
+      table.insert(lines, 1, os.date(fmt))
     end
     table.insert(lines, "")
     target = vim.fs.joinpath(vault.root(), os.date(opts().capture.note_file))

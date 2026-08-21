@@ -49,8 +49,9 @@ Calling setup() is optional; these are the defaults: >lua
     notes_dir = "~/notes",
     ignore = { ".git", ".obsidian", "trash", "archive" },
     capture = {
-      note_file = "Captures.md",  -- os.date() tokens expand
-      timestamp = true,           -- "## HH:MM" heading per capture
+      note_file = "Captures.md",           -- os.date() tokens expand
+      timestamp = "## %Y-%m-%d %H:%M",     -- heading per capture, any
+                                           -- os.date() format; false = none
       window = { width = 0.5, height = 0.3, border = "rounded", title = " moor " },
       maps = { promote = "<C-p>", abort = "<C-c>" },
     },

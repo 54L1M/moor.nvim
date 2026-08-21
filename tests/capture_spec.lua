@@ -42,6 +42,29 @@ describe("capture", function()
     assert.are.same({ "# Captures", "", "a passing thought", "" }, lines, "note appended with title header")
   end)
 
+  it("stamps note captures with a dated heading by default", function()
+    require("moor").setup({ notes_dir = root })
+    local buf = capture.open({ mode = "note" })
+    vim.cmd.stopinsert()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "dated thought" })
+    vim.cmd.write()
+    local lines = vim.fn.readfile(root .. "/Captures.md")
+    assert.is_truthy(
+      lines[3]:match("^## %d%d%d%d%-%d%d%-%d%d %d%d:%d%d$"),
+      "default stamp is '## YYYY-MM-DD HH:MM', got " .. lines[3]
+    )
+  end)
+
+  it("accepts a custom timestamp format", function()
+    require("moor").setup({ notes_dir = root, capture = { timestamp = "### %Y" } })
+    local buf = capture.open({ mode = "note" })
+    vim.cmd.stopinsert()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "custom stamp" })
+    vim.cmd.write()
+    local lines = vim.fn.readfile(root .. "/Captures.md")
+    assert.are.equal(os.date("### %Y"), lines[3], "user-provided os.date format is used verbatim")
+  end)
+
   it("routes a todo capture through tasks.format with the stashed context", function()
     vim.fn.writefile({ "line one", "line two" }, proj .. "/main.go")
     vim.cmd.edit(proj .. "/main.go")

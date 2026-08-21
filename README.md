@@ -46,7 +46,8 @@ require("moor").setup({
     -- Destination for note captures, relative to notes_dir. os.date() tokens
     -- are expanded: "inbox/%Y-%m-%d.md" turns captures into daily notes.
     note_file = "Captures.md",
-    timestamp = true, -- prefix each capture with a "## HH:MM" heading
+    -- Heading above each capture, as an os.date() format. false = raw append.
+    timestamp = "## %Y-%m-%d %H:%M",
     window = { width = 0.5, height = 0.3, border = "rounded", title = " moor " },
     maps = { promote = "<C-p>", abort = "<C-c>" }, -- inside the float only
   },
@@ -95,9 +96,10 @@ A thought hits while you're mid-function. Press your capture key: a small float
 opens over the code, you type, `:w` — the float closes and you're back where
 you were. That's the whole gesture.
 
-- **note mode** appends to `capture.note_file` (with an optional `## HH:MM`
-  stamp), creating the file with a `# Title` header so it renders properly in
-  ZenNotes/Obsidian.
+- **note mode** appends to `capture.note_file` under a dated heading
+  (`## 2026-08-21 12:32` by default — `capture.timestamp` takes any `os.date()`
+  format, or `false`), creating the file with a `# Title` header so it renders
+  properly in ZenNotes/Obsidian.
 - **todo mode** turns each line into `- [ ] …` in your project's todo file.
 - **context** (`capture({ mode = "todo", context = true })`) moors the todo to
   where your cursor was:

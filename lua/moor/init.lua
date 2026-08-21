@@ -27,8 +27,9 @@ M.defaults = {
     -- Destination for plain-note captures, relative to notes_dir. os.date()
     -- tokens are expanded, so "inbox/%Y-%m-%d.md" gives daily notes.
     note_file = "Captures.md",
-    -- Prefix each note capture with a "## HH:MM" heading. false = raw append.
-    timestamp = true,
+    -- Heading placed above each note capture, as an os.date() format.
+    -- false = raw append; true = this default.
+    timestamp = "## %Y-%m-%d %H:%M",
     window = { width = 0.5, height = 0.3, border = "rounded", title = " moor " },
     -- Buffer-local maps inside the capture float (set one to false to disable).
     maps = { promote = "<C-p>", abort = "<C-c>" },
