@@ -73,6 +73,33 @@ describe("links", function()
     end)
   end)
 
+  describe("find and insert", function()
+    local function with_pick(index, fn)
+      local orig = vim.ui.select
+      vim.ui.select = function(items, _, on_choice) ---@diagnostic disable-line: duplicate-set-field
+        on_choice(items[index])
+      end
+      fn()
+      vim.ui.select = orig
+    end
+
+    it("find opens the picked note", function()
+      note("inbox/Target.md", { "# Target" })
+      with_pick(1, links.find)
+      assert.is_truthy(vim.api.nvim_buf_get_name(0):find("Target%.md$"), "picked note is opened")
+    end)
+
+    it("insert puts a [[link]] at the cursor", function()
+      note("inbox/Target.md", { "# Target" })
+      vim.cmd("enew")
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, { "see " })
+      vim.api.nvim_win_set_cursor(0, { 1, 3 })
+      with_pick(1, links.insert)
+      assert.are.equal("see [[Target]]", vim.api.nvim_get_current_line(), "link inserted after the cursor")
+      vim.cmd("bwipeout!")
+    end)
+  end)
+
   describe("follow", function()
     it("opens an existing note by title", function()
       local path = note("inbox/Target.md", { "# Target" })

@@ -107,6 +107,12 @@ single entry set to false skips that map; a different lhs rebinds it.
 :Moor backlinks                                              *:Moor-backlinks*
     List notes linking to the current note and jump to a selection.
 
+:Moor find                                                        *:Moor-find*
+    Pick any note in the vault and open it.
+
+:Moor link                                                        *:Moor-link*
+    Pick a note and insert a [[link]] to it at the cursor.
+
 :Moor mooring                                                  *:Moor-mooring*
     Jump from the code to the todo moored to it: the current line's mooring
     directly, otherwise a pick from all moorings in this file. See
@@ -236,6 +242,12 @@ Wikilinks resolve by note title, i.e. the file name without ".md" — the
 ZenNotes/Obsidian convention. [[Title]], [[Title|alias]] and [[Title#heading]]
 are all recognized, case-insensitively. Backlink listings go through
 |vim.ui.select()|.
+
+                                                              *moor-completion*
+Typing "[[" in a vault note or capture float pops note-title completion
+(matched case-insensitively anywhere in the title; accepting closes the ]]).
+It is a buffer-local 'completefunc', so CTRL-X CTRL-U summons it manually.
+Disable with `links.completion = false`.
 
 ==============================================================================
 10. FILE FORMAT                                              *moor-file-format*

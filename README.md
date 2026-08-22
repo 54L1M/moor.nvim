@@ -91,6 +91,7 @@ require("moor").setup({
 
   links = {
     new_note_dir = "", -- where notes created from [[missing links]] land
+    completion = true, -- complete note titles when typing [[ (false disables)
   },
 
   -- Signs on code lines that have an open todo moored to them.
@@ -114,6 +115,8 @@ require("moor").setup({
     backlinks = "<leader>nb",
     open_todo = "<leader>no",
     mooring = "<leader>nm",         -- jump from a moored code line to its todo
+    find_note = "<leader>ns",       -- pick any note and open it
+    insert_link = "<leader>ni",     -- pick a note, insert [[link]] at the cursor
   },
 })
 ```
@@ -229,6 +232,13 @@ pick. `moorings = false` turns the whole thing off.
 - `:Moor backlinks` lists every note linking to the current one via
   `vim.ui.select` — `[[Title]]`, `[[Title|alias]]`, and `[[Title#heading]]`
   all count.
+- **Typing `[[`** in a vault note (or a capture float) pops note-title
+  completion, matched case-insensitively anywhere in the title; accepting a
+  title closes the `]]` for you. It's a plain `completefunc`, so `<C-x><C-u>`
+  also summons it and `<C-n>`/`<C-p>` navigate. `links.completion = false`
+  turns it off.
+- `:Moor find` (`<leader>ns`) opens any note via your picker; `:Moor link`
+  (`<leader>ni`) picks a note and inserts a `[[link]]` to it at the cursor.
 
 ### Health
 

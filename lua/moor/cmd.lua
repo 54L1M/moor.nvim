@@ -33,6 +33,12 @@ local subcommands = {
   mooring = function()
     require("moor").mooring()
   end,
+  find = function()
+    require("moor").find_note()
+  end,
+  link = function()
+    require("moor").insert_link()
+  end,
 }
 
 ---@param cmd table  The user-command callback table from nvim_create_user_command

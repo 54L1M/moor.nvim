@@ -51,6 +51,9 @@ M.defaults = {
 
   links = {
     new_note_dir = "", -- where [[Missing Title]] notes are created, relative to notes_dir
+    -- Complete note titles when typing [[ in vault notes and capture floats
+    -- (auto-popup; <C-x><C-u> summons it manually). false disables.
+    completion = true,
   },
 
   -- Signs on code lines that have an open todo moored to them, read from the
@@ -74,6 +77,8 @@ M.defaults = {
     backlinks = "<leader>nb",
     open_todo = "<leader>no",
     mooring = "<leader>nm",
+    find_note = "<leader>ns",
+    insert_link = "<leader>ni",
   },
 }
 
@@ -148,6 +153,18 @@ local keymap_actions = {
       M.mooring()
     end,
   },
+  find_note = {
+    desc = "find note",
+    fn = function()
+      M.find_note()
+    end,
+  },
+  insert_link = {
+    desc = "insert [[link]]",
+    fn = function()
+      M.insert_link()
+    end,
+  },
 }
 
 local function apply_keymaps()
@@ -169,6 +186,7 @@ function M.setup(opts)
   M.options = vim.tbl_deep_extend("force", M.defaults, opts or {})
   apply_keymaps()
   require("moor.moorings").attach()
+  require("moor.completion").attach()
 end
 
 -- ── Thin delegating API (bind these directly in your own keymaps) ────────────
@@ -215,6 +233,16 @@ end
 --- Jump from a code line to the todo moored to it (picker when several).
 function M.mooring()
   require("moor.moorings").jump()
+end
+
+--- Pick any note in the vault and open it.
+function M.find_note()
+  require("moor.links").find()
+end
+
+--- Pick a note and insert a [[link]] to it at the cursor.
+function M.insert_link()
+  require("moor.links").insert()
 end
 
 return M

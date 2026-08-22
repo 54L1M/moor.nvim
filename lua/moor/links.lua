@@ -54,6 +54,44 @@ function M.follow()
   end)
 end
 
+-- ── Find / insert ────────────────────────────────────────────────────────────
+
+--- Pick any note in the vault and hand its path to `on_choice`.
+---@param prompt string @param on_choice fun(path: string)
+local function pick_note(prompt, on_choice)
+  local vault = require("moor.vault")
+  local paths = vault.list_notes()
+  if #paths == 0 then
+    vim.notify("moor: no notes in " .. vault.root(), vim.log.levels.INFO)
+    return
+  end
+  require("moor.picker").select(paths, {
+    prompt = prompt,
+    format = function(path)
+      return vault.relative(path)
+    end,
+  }, function(path)
+    if path then
+      on_choice(path)
+    end
+  end)
+end
+
+--- Pick a note and open it.
+function M.find()
+  pick_note("find note", function(path)
+    vim.cmd.edit(vim.fn.fnameescape(path))
+  end)
+end
+
+--- Pick a note and insert a [[link]] to it at the cursor.
+function M.insert()
+  pick_note("link to note", function(path)
+    local link = ("[[%s]]"):format(require("moor.vault").title_for_path(path))
+    vim.api.nvim_put({ link }, "c", true, true)
+  end)
+end
+
 -- ── Backlinks ────────────────────────────────────────────────────────────────
 
 ---@class MoorBacklink
