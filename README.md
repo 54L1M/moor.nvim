@@ -15,6 +15,30 @@ plain, portable markdown. Point `notes_dir` at a vault that syncs (iCloud,
 git, Syncthing) and your captures and todos show up on your phone; edits made
 there flow back the next time moor scans.
 
+![capture float over code](assets/capture.png)
+
+<details>
+<summary>More screenshots</summary>
+
+The dashboard — every open todo in the vault, wikilinks bare, due dates
+highlighted:
+
+![dashboard](assets/dashboard.png)
+
+`s` flips it into a flat soonest-first deadline list:
+
+![dashboard sorted by due date](assets/dashboard-sorted.png)
+
+The project todo view keeps done and cancelled tasks visible:
+
+![project todo view](assets/project-view.png)
+
+Moored todos anchor a sign to their line in the code:
+
+![mooring signs in the code](assets/mooring.png)
+
+</details>
+
 ---
 
 ## Requirements
@@ -69,6 +93,12 @@ require("moor").setup({
     new_note_dir = "", -- where notes created from [[missing links]] land
   },
 
+  -- Signs on code lines that have an open todo moored to them.
+  -- Set moorings = false to disable.
+  moorings = {
+    sign = "⚓",
+  },
+
   -- Global keymaps, applied by setup(). Set keymaps = false to define none
   -- (and bind the API yourself), set one entry to false to skip just it, or
   -- give an entry a different lhs to rebind.
@@ -83,6 +113,7 @@ require("moor").setup({
     follow_link = "<leader>nf",
     backlinks = "<leader>nb",
     open_todo = "<leader>no",
+    mooring = "<leader>nm",         -- jump from a moored code line to its todo
   },
 })
 ```
@@ -172,12 +203,24 @@ plain` skips the file:line.
 | `MoorTodoMark` | open checkbox icon         | unstyled                    |
 | `MoorDue`      | future due dates           | `Special`                   |
 | `MoorOverdue`  | overdue / due-today dates  | `DiagnosticError`           |
+| `MoorAnchor`   | mooring sign in the code   | `Special`                   |
 
 Change any of them in your config or colorscheme:
 
 ```lua
 vim.api.nvim_set_hl(0, "MoorLink", { fg = "#7aa2f7" })
 ```
+
+### Moorings in the code
+
+The anchor works in both directions. Lines of your code that have an open todo
+moored to them show a `⚓` sign in the sign column, read fresh from the project
+todo file whenever you enter the buffer (and after every capture or toggle).
+Complete the todo and the sign disappears.
+
+`<leader>nm` / `:Moor mooring` jumps from the code to the todo: on a moored
+line it goes straight there; elsewhere in a file with moorings it offers a
+pick. `moorings = false` turns the whole thing off.
 
 ### Backlinks
 
@@ -186,6 +229,11 @@ vim.api.nvim_set_hl(0, "MoorLink", { fg = "#7aa2f7" })
 - `:Moor backlinks` lists every note linking to the current one via
   `vim.ui.select` — `[[Title]]`, `[[Title|alias]]`, and `[[Title#heading]]`
   all count.
+
+### Health
+
+`:checkhealth moor` verifies the nvim version, that `notes_dir` exists and is
+writable, times a vault scan, and shows where the current project's todos go.
 
 ### Built for synced vaults
 

@@ -65,6 +65,7 @@ Calling setup() is optional; these are the defaults: >lua
       maps = { toggle = "t", jump = "<CR>", jump_context = "gd", sort = "s", refresh = "r", close = "q" },
     },
     links = { new_note_dir = "" },
+    moorings = { sign = "⚓" },            -- false disables; see |moor-moorings|
     keymaps = {                            -- global maps, applied by setup()
       capture_note = "<leader>nn",
       capture_todo = "<leader>nt",
@@ -76,6 +77,7 @@ Calling setup() is optional; these are the defaults: >lua
       follow_link = "<leader>nf",
       backlinks = "<leader>nb",
       open_todo = "<leader>no",
+      mooring = "<leader>nm",         -- jump from code to its moored todo
     },
   })
 <
@@ -104,6 +106,11 @@ single entry set to false skips that map; a different lhs rebinds it.
 
 :Moor backlinks                                              *:Moor-backlinks*
     List notes linking to the current note and jump to a selection.
+
+:Moor mooring                                                  *:Moor-mooring*
+    Jump from the code to the todo moored to it: the current line's mooring
+    directly, otherwise a pick from all moorings in this file. See
+    |moor-moorings|.
 
 :Moor open                                                        *:Moor-open*
     Open the project todo view: the |moor-dashboard| scoped to this project's
@@ -206,6 +213,21 @@ The dashboard never caches: it rescans when opened, after every toggle, and
 on |FocusGained| — so edits synced in from other devices show up. Toggling
 re-reads the source line first and refuses to write if the note changed
 underneath (a sync landed); it rescans instead.
+
+==============================================================================
+                                                               *moor-moorings*
+MOORINGS IN THE CODE~
+
+Code lines with an open todo moored to them show a sign (default "⚓",
+highlight |hl-MoorAnchor|-style group MoorAnchor), read fresh from the
+project todo file on |BufEnter| and after every moor capture or toggle.
+Completing the todo removes the sign. `moorings = false` disables the
+feature; `moorings.sign` changes the character.
+
+|:Moor-mooring| (default <leader>nm) jumps from the code to the todo.
+
+`:checkhealth moor` reports on the nvim version, the vault, and the current
+project's todo file.
 
 ==============================================================================
 9. BACKLINKS                                                  *moor-backlinks*

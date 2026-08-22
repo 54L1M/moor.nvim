@@ -8,8 +8,13 @@ local M = {}
 ---@param cwd? string  Injectable for tests; defaults to the current directory.
 ---@return string name, string root
 function M.identity(cwd)
-  cwd = cwd or assert(vim.uv.cwd())
-  local root = vim.fs.root(cwd, ".git") or cwd
+  -- uv.cwd() fails (nil) when the directory was deleted underneath the
+  -- session; getcwd() still knows the nominal path, so fall through to it.
+  -- vim.fs.root can still assert internally in that state — treat any
+  -- failure as "no repo found" rather than crashing the caller.
+  cwd = cwd or vim.uv.cwd() or vim.fn.getcwd()
+  local ok, root = pcall(vim.fs.root, cwd, ".git")
+  root = (ok and root) or cwd
   return vim.fs.basename(root), root
 end
 

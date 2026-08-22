@@ -30,6 +30,9 @@ local subcommands = {
   open = function()
     require("moor").open_todo()
   end,
+  mooring = function()
+    require("moor").mooring()
+  end,
 }
 
 ---@param cmd table  The user-command callback table from nvim_create_user_command

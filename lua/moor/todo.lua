@@ -34,6 +34,7 @@ function M.add(text, context)
   local ok = vault.append_lines(path, { require("moor.tasks").format(text, context) })
   if ok then
     vim.notify("moor: todo → " .. vault.relative(path))
+    require("moor.moorings").refresh_visible()
   end
   return ok
 end
@@ -127,11 +128,17 @@ function M.toggle_at(item)
   end
   lines[item.lnum] = new_line
   local buf = vim.fn.bufnr(item.path)
+  local ok
   if buf ~= -1 and vim.api.nvim_buf_is_loaded(buf) then
     vim.api.nvim_buf_set_lines(buf, item.lnum - 1, item.lnum, false, { new_line })
-    return vault.flush_buffer(buf)
+    ok = vault.flush_buffer(buf)
+  else
+    ok = vault.write_lines(item.path, lines)
   end
-  return vault.write_lines(item.path, lines)
+  if ok then
+    require("moor.moorings").refresh_visible()
+  end
+  return ok
 end
 
 return M

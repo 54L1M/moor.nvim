@@ -22,6 +22,6 @@ end, {
     if cmdline:match("^Moor%s+%S+%s") then
       return {}
     end
-    return { "capture", "todo", "dashboard", "toggle", "follow", "backlinks", "open" }
+    return { "capture", "todo", "dashboard", "toggle", "follow", "backlinks", "open", "mooring" }
   end,
 })

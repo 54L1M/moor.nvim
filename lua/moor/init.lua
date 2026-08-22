@@ -53,6 +53,12 @@ M.defaults = {
     new_note_dir = "", -- where [[Missing Title]] notes are created, relative to notes_dir
   },
 
+  -- Signs on code lines that have an open todo moored to them, read from the
+  -- project todo file. Set moorings = false to disable.
+  moorings = {
+    sign = "⚓",
+  },
+
   -- Global normal-mode keymaps, applied by setup(). `keymaps = false` defines
   -- none; a single entry set to false skips just that one; a different lhs
   -- rebinds it.
@@ -67,6 +73,7 @@ M.defaults = {
     follow_link = "<leader>nf",
     backlinks = "<leader>nb",
     open_todo = "<leader>no",
+    mooring = "<leader>nm",
   },
 }
 
@@ -135,6 +142,12 @@ local keymap_actions = {
       M.open_todo()
     end,
   },
+  mooring = {
+    desc = "jump to moored todo",
+    fn = function()
+      M.mooring()
+    end,
+  },
 }
 
 local function apply_keymaps()
@@ -155,6 +168,7 @@ end
 function M.setup(opts)
   M.options = vim.tbl_deep_extend("force", M.defaults, opts or {})
   apply_keymaps()
+  require("moor.moorings").attach()
 end
 
 -- ── Thin delegating API (bind these directly in your own keymaps) ────────────
@@ -196,6 +210,11 @@ end
 --- file, with done tasks kept visible and struck through.
 function M.open_todo()
   require("moor.dashboard").open({ scope = "project" })
+end
+
+--- Jump from a code line to the todo moored to it (picker when several).
+function M.mooring()
+  require("moor.moorings").jump()
 end
 
 return M

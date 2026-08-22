@@ -65,6 +65,9 @@ local function save(buf)
   if ok then
     vim.bo[buf].modified = false
     vim.notify("moor: captured → " .. vault.relative(target))
+    if mode == "todo" then
+      require("moor.moorings").refresh_visible()
+    end
   end
   return ok
 end
